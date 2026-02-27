@@ -1,190 +1,180 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantum Access Portal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Access Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg1: #0f0c29; --bg2: #302b63; --bg3: #24243e;
+            --accent: #7f5af0; --accent2: #00f5ff;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+            color: white;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
 
-<style>
-:root {
-    --bg1: #0f0c29;
-    --bg2: #302b63;
-    --bg3: #24243e;
-    --accent: #7f5af0;
-    --accent2: #00f5ff;
-}
+        /* Glass card */
+        .portal {
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 40px rgba(0, 245, 255, 0.2);
+            margin-bottom: 30px;
+        }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+        h1 {
+            text-align: center; margin-bottom: 25px; font-size: 1.4rem;
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
 
-body {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Orbitron', sans-serif;
-    background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
-    overflow: hidden;
-}
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
+            color: white; outline: none; transition: 0.3s;
+        }
 
-/* Анимированный фон */
-body::before {
-    content: "";
-    position: absolute;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 30% 30%, rgba(0,245,255,0.2), transparent 40%),
-                radial-gradient(circle at 70% 70%, rgba(127,90,240,0.2), transparent 40%);
-    animation: float 10s infinite alternate ease-in-out;
-}
+        input:focus { border-color: var(--accent2); box-shadow: 0 0 10px var(--accent2); }
 
-@keyframes float {
-    from { transform: translate(-10%, -10%); }
-    to { transform: translate(10%, 10%); }
-}
+        button {
+            width: 100%; padding: 12px; border-radius: 10px; border: none;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            color: white; font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
 
-/* Glass card */
-.portal {
-    position: relative;
-    width: 400px;
-    padding: 40px;
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
-    z-index: 1;
-}
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent); }
 
-.portal h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 22px;
-    letter-spacing: 2px;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
+        /* Стили для "Живой" ленты (onSnapshot) */
+        #feed {
+            width: 100%; max-width: 450px;
+        }
 
-.input-group {
-    margin-bottom: 25px;
-    position: relative;
-}
+        .post {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--accent2);
+            padding: 15px; margin-bottom: 15px; border-radius: 0 10px 10px 0;
+            animation: fadeIn 0.5s ease;
+        }
 
-input {
-    width: 100%;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.05);
-    color: white;
-    font-size: 14px;
-    outline: none;
-    transition: 0.3s;
-}
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } }
 
-input:focus {
-    border-color: var(--accent2);
-    box-shadow: 0 0 15px var(--accent2);
-}
+        .post-header { font-size: 0.8rem; color: var(--accent2); margin-bottom: 5px; }
+        .post-content { font-size: 0.9rem; margin-bottom: 10px; opacity: 0.9; }
 
-button {
-    width: 100%;
-    padding: 15px;
-    border-radius: 12px;
-    border: none;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    color: white;
-    transition: 0.3s;
-}
+        .like-btn {
+            background: transparent; border: 1px solid var(--accent2);
+            width: auto; padding: 5px 15px; font-size: 0.7rem; display: inline-block;
+        }
 
-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px var(--accent2);
-}
-
-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-#log-status {
-    margin-top: 15px;
-    text-align: center;
-    font-size: 13px;
-    min-height: 20px;
-    color: #ffffff;
-}
-</style>
+        #log-status { margin-top: 15px; text-align: center; font-size: 0.8rem; color: var(--accent2); }
+    </style>
 </head>
 <body>
 
 <div class="portal">
     <h1>QUANTUM LINK ACCESS</h1>
-
     <form id="firebase-form">
-        <div class="input-group">
-            <input type="text" id="name" placeholder="Enter your name" required>
-        </div>
-
-        <div class="input-group">
-            <input type="email" id="email" placeholder="Enter your email" required>
-        </div>
-
-        <button type="submit" id="submit-btn">CONNECT</button>
+        <input type="text" id="name" placeholder="Identifier (Name)" required>
+        <input type="email" id="email" placeholder="Uplink (Email)" required>
+        <button type="submit" id="submit-btn">SEND PACKET</button>
     </form>
-
-    <div id="log-status"></div>
+    <div id="log-status">System ready...</div>
 </div>
 
+<div id="feed"></div>
+
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    // 1. Импорт модулей
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { 
+        getFirestore, collection, addDoc, onSnapshot, 
+        query, orderBy, updateDoc, doc, increment, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH",
-    projectId: "YOUR_PROJECT",
-};
+    // 2. Инициализация через ваши ключи
+    const firebaseConfig = {
+        apiKey: "AIzaSyBL9VYkz-H6C3jssDP2t9j7iflVH1dgoUs",
+        authDomain: "suhh-d5e46.firebaseapp.com",
+        projectId: "suhh-d5e46",
+        storageBucket: "suhh-d5e46.firebasestorage.app",
+        messagingSenderId: "460049677444",
+        appId: "1:460049677444:web:49c6b125f5de94397016d1",
+        measurementId: "G-290D5X7LS5"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-const form = document.getElementById('firebase-form');
-const status = document.getElementById('log-status');
-const btn = document.getElementById('submit-btn');
+    const form = document.getElementById('firebase-form');
+    const status = document.getElementById('log-status');
+    const feed = document.getElementById('feed');
 
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    btn.disabled = true;
-    status.innerHTML = "Establishing secure channel...";
+    // 3. Отправка данных (addDoc)
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        status.innerHTML = "Syncing with cloud...";
 
-    try {
-        await addDoc(collection(db, "requests"), {
-            user: document.getElementById('name').value,
-            contact: document.getElementById('email').value,
-            timestamp: new Date().toLocaleString()
+        try {
+            await addDoc(collection(db, "requests"), {
+                user: document.getElementById('name').value,
+                contact: document.getElementById('email').value,
+                likes: 0,
+                timestamp: serverTimestamp() // Для точной сортировки
+            });
+            status.innerHTML = "Packet delivered successfully ⚡";
+            form.reset();
+        } catch (err) {
+            status.innerHTML = "Security breach/Connection error ❌";
+            console.error(err);
+        }
+    });
+
+    // 4. Реактивность (onSnapshot + orderBy)
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+        feed.innerHTML = ""; // Очистка ленты перед обновлением
+        snapshot.forEach((post) => {
+            const data = post.data();
+            const postElement = document.createElement('div');
+            postElement.className = 'post';
+            postElement.innerHTML = `
+                <div class="post-header">> ID: ${data.user}</div>
+                <div class="post-content">${data.contact}</div>
+                <button class="like-btn" onclick="addLike('${post.id}')">
+                    ENERGY: ${data.likes || 0}
+                </button>
+            `;
+            feed.appendChild(postElement);
         });
+    });
 
-        status.innerHTML = "Connection successful ⚡";
-        form.reset();
-    } catch (err) {
-        status.innerHTML = "Connection failed ❌";
-        console.error(err);
-    } finally {
-        btn.disabled = false;
-    }
-});
+    // 5. Работа с лайками (updateDoc + increment)
+    window.addLike = async (postId) => {
+        const postRef = doc(db, "requests", postId);
+        try {
+            await updateDoc(postRef, {
+                likes: increment(1)
+            });
+        } catch (err) {
+            alert("Security Rules prevent editing! Check console.");
+        }
+    };
 </script>
-
 </body>
 </html>
