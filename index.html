@@ -3,106 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase App Interface</title>
+    <title>Firebase Data Portal</title>
     <style>
-        /* Базовые стили для красоты */
+        /* Стиль в духе современных панелей управления */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #0f172a; /* Темный фон */
+            color: #f8fafc;
+            font-family: 'Inter', -apple-system, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            color: #333;
         }
 
-        /* Контейнер формы */
-        .card {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        .container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 2rem;
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #38bdf8; /* Голубой акцент */
             text-align: center;
         }
 
-        h2 {
-            margin-bottom: 20px;
-            color: #4a4a4a;
+        p {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 2rem;
         }
 
-        /* Стили полей ввода */
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            color: #64748b;
         }
 
         input {
             width: 100%;
-            padding: 12px 15px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
             box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.3s;
+            transition: all 0.2s ease;
         }
 
         input:focus {
-            border-color: #764ba2;
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
         }
 
-        /* Кнопка с эффектом */
         button {
             width: 100%;
-            padding: 12px;
-            background-color: #764ba2;
-            color: white;
+            padding: 0.75rem;
+            background: #38bdf8;
+            color: #0f172a;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 1rem;
             cursor: pointer;
-            transition: transform 0.2s, background 0.3s;
+            transition: background 0.2s ease;
+            margin-top: 1rem;
         }
 
         button:hover {
-            background-color: #5a3782;
-            transform: translateY(-2px);
+            background: #7dd3fc;
         }
 
-        button:active {
-            transform: translateY(0);
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
         }
 
-        #status {
-            margin-top: 15px;
-            font-size: 14px;
+        #message {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+            min-height: 1.25rem;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>Оставить заявку</h2>
-        <form id="requestForm">
-            <div class="input-group">
-                <input type="text" id="name" placeholder="Ваше имя" required>
+    <div class="container">
+        <h1>Cloud Sync</h1>
+        <p>Введите данные для отправки в Firebase</p>
+        
+        <form id="dataForm">
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" id="userName" placeholder="John Doe" required>
             </div>
-            <div class="input-group">
-                <input type="email" id="email" placeholder="Email адрес" required>
+            <div class="form-group">
+                <label>Электронная почта</label>
+                <input type="email" id="userEmail" placeholder="example@mail.com" required>
             </div>
-            <button type="submit" id="submitBtn">Отправить данные</button>
+            <button type="submit" id="submitBtn">Синхронизировать</button>
         </form>
-        <div id="status"></div>
+
+        <div id="message"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // Твоя конфигурация
         const firebaseConfig = {
             apiKey: "AIzaSyBL9VYkz-H6C3jssDP2t9j7iflVH1dgoUs",
             authDomain: "suhh-d5e46.firebaseapp.com",
@@ -116,34 +141,34 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const form = document.getElementById('requestForm');
-        const status = document.getElementById('status');
+        const form = document.getElementById('dataForm');
+        const msg = document.getElementById('message');
+        const btn = document.getElementById('submitBtn');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
             
             btn.disabled = true;
-            btn.innerText = "Отправка...";
-            status.innerText = "";
+            btn.textContent = "Отправка...";
+            msg.textContent = "";
 
             try {
                 await addDoc(collection(db, "requests"), {
-                    name: document.getElementById('name').value,
-                    email: document.getElementById('email').value,
-                    timestamp: new Date()
+                    name: document.getElementById('userName').value,
+                    email: document.getElementById('userEmail').value,
+                    created_at: new Date().toISOString()
                 });
                 
-                status.style.color = "green";
-                status.innerText = "🎉 Успешно отправлено!";
+                msg.style.color = "#4ade80"; // Зеленый
+                msg.textContent = "✓ Данные успешно сохранены";
                 form.reset();
-            } catch (e) {
-                status.style.color = "red";
-                status.innerText = "❌ Ошибка. Проверь консоль.";
-                console.error("Error adding document: ", e);
+            } catch (error) {
+                msg.style.color = "#f87171"; // Красный
+                msg.textContent = "× Ошибка подключения";
+                console.error("Firebase Error:", error);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Отправить данные";
+                btn.textContent = "Синхронизировать";
             }
         });
     </script>
