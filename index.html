@@ -1,1 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Form</title>
+</head>
+<body>
 
+    <form id="requestForm">
+        <input type="text" id="name" placeholder="Имя" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <button type="submit">Отправить</button>
+    </form>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // 2. Инициализация: Конфигурация из вашего скриншота
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL9VYkz-H6C3jssDP2t9j7iflVH1dgoUs",
+            authDomain: "suhh-d5e46.firebaseapp.com",
+            projectId: "suhh-d5e46",
+            storageBucket: "suhh-d5e46.firebasestorage.app",
+            messagingSenderId: "460049677444",
+            appId: "1:460049677444:web:49c6b125f5de94397016d1",
+            measurementId: "G-290D5X7LS5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 3. Обработка формы
+        const form = document.getElementById('requestForm');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Чтобы страница не перезагружалась
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+
+            try {
+                // Команда addDoc для отправки в коллекцию "requests"
+                const docRef = await addDoc(collection(db, "requests"), {
+                    name: name,
+                    email: email,
+                    date: new Date()
+                });
+
+                console.log("Документ отправлен с ID: ", docRef.id);
+                alert("Данные успешно отправлены!");
+                form.reset(); // Очистка формы
+            } catch (error) {
+                console.error("Ошибка при отправке: ", error);
+                alert("Ошибка! Проверьте консоль или настройки правил базы данных.");
+            }
+        });
+    </script>
+</body>
+</html>
