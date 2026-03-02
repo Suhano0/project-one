@@ -125,30 +125,40 @@
     const feed = document.getElementById('feed');
 
     // 3. Отправка данных (addDoc)
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        status.innerHTML = "Syncing with cloud...";
-
-        try {
-            await addDoc(collection(db, "requests"), {
-                user: document.getElementById('name').value,
-                contact: document.getElementById('email').value,
-                likes: 0,
-                timestamp: serverTimestamp() // Для точной сортировки
-            });
-            status.innerHTML = "Packet delivered successfully ⚡";
-            form.reset();
-        } catch (err) {
-            status.innerHTML = "Security breach/Connection error ❌";
-            console.error(err);
-        }
+    async function addRequest(name, email) {
+    await addDoc(collection(db, "requests"), {
+        user: name,
+        contact: email,
+        likes: 0,
+        timestamp: serverTimestamp()
     });
+}
+
+// Обработчик формы
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.innerHTML = "Syncing with cloud...";
+
+    try {
+        await addRequest(
+            document.getElementById('name').value,
+            document.getElementById('email').value
+        );
+        status.innerHTML = "Packet delivered successfully ⚡";
+        form.reset();
+    } catch (err) {
+        status.innerHTML = "Connection error ❌";
+        console.error(err);
+    }
+});
 
     // 4. Реактивность (onSnapshot + orderBy)
+   function loadRequests() {
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-    
+
     onSnapshot(q, (snapshot) => {
-        feed.innerHTML = ""; // Очистка ленты перед обновлением
+        feed.innerHTML = "";
+
         snapshot.forEach((post) => {
             const data = post.data();
             const postElement = document.createElement('div');
@@ -163,6 +173,10 @@
             feed.appendChild(postElement);
         });
     });
+}
+
+// Запуск функции загрузки
+loadRequests();
 
     // 5. Работа с лайками (updateDoc + increment)
     window.addLike = async (postId) => {
