@@ -134,42 +134,67 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // Элементы
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
     const form = document.getElementById('firebase-form');
     const status = document.getElementById('log-status');
     const feed = document.getElementById('feed');
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
     const userInfo = document.getElementById('user-info');
 
-    // --- ОБРАБОТКА ВХОДА ---
+    // 1. Клик по входу
+    loginBtn.onclick = async () => {
+        console.log("Button clicked!");
+        alert("Redirecting to Google... If nothing happens, check console (F12)");
+        try {
+            await signInWithRedirect(auth, provider);
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    };
 
-    loginBtn.onclick = () => signInWithRedirect(auth, provider);
+    // 2. Клик по выходу
     logoutBtn.onclick = () => signOut(auth);
 
-    // Ловим результат после перезагрузки страницы
-    getRedirectResult(auth).catch(err => console.error("Redirect Error:", err));
-
+    // 3. Слежка за входом
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'block';
             form.style.display = 'block';
-            userInfo.innerHTML = `ONLINE: ${user.displayName}`;
-            status.innerHTML = "System online ⚡";
+            userInfo.innerHTML = "Logged as: " + user.displayName;
+            status.innerHTML = "System Ready";
         } else {
             loginBtn.style.display = 'block';
             logoutBtn.style.display = 'none';
             form.style.display = 'none';
             userInfo.innerHTML = "";
-            status.innerHTML = "Awaiting authorization...";
+            status.innerHTML = "Awaiting Auth...";
         }
     });
 
-    // --- БАЗА ДАННЫХ ---
+    // 4. Загрузка постов (без изменений)
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        feed.innerHTML = "";
+        snapshot.forEach((postDoc) => {
+            const data = postDoc.data();
+            const div = document.createElement('div');
+            div.className = 'post';
+            div.innerHTML = `
+                <div class="post-header">> ID: ${data.user}</div>
+                <div class="post-content">${data.contact}</div>
+                <button class="like-btn" onclick="window.addLike('${postDoc.id}')">
+                    ENERGY: ${data.likes || 0}
+                </button>
+            `;
+            feed.appendChild(div);
+        });
+    });
 
-    form.addEventListener('submit', async (e) => {
+    // 5. Отправка формы
+    form.onsubmit = async (e) => {
         e.preventDefault();
-        status.innerHTML = "Syncing...";
         try {
             await addDoc(collection(db, "requests"), {
                 user: document.getElementById('name').value,
@@ -177,48 +202,20 @@
                 likes: 0,
                 timestamp: serverTimestamp()
             });
-            status.innerHTML = "Success! Packet sent.";
             form.reset();
         } catch (err) {
-            status.innerHTML = "Error: No Permission ❌";
-            console.error(err);
+            alert("Rules error: " + err.message);
         }
-    });
+    };
 
-    function loadRequests() {
-        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            feed.innerHTML = "";
-            snapshot.forEach((post) => {
-                const data = post.data();
-                const postElement = document.createElement('div');
-                postElement.className = 'post';
-                postElement.innerHTML = `
-                    <div class="post-header">> ID: ${data.user}</div>
-                    <div class="post-content">${data.contact}</div>
-                    <button class="like-btn" data-id="${post.id}">
-                        ENERGY: ${data.likes || 0}
-                    </button>
-                `;
-                feed.appendChild(postElement);
-            });
-        });
-    }
-
-    // Слушатель кликов для лайков (исправленный метод)
-    document.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('like-btn')) {
-            const id = e.target.getAttribute('data-id');
-            const postRef = doc(db, "requests", id);
-            try {
-                await updateDoc(postRef, { likes: increment(1) });
-            } catch (err) {
-                alert("Auth required for Energy Boost!");
-            }
+    // 6. Лайки
+    window.addLike = async (id) => {
+        try {
+            await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+        } catch (e) {
+            alert("Log in to like!");
         }
-    });
-
-    loadRequests();
+    };
 </script>
 </body>
 </html>
