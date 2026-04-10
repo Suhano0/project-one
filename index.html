@@ -42,55 +42,46 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        #auth-section {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+        #auth-section { text-align: center; margin-bottom: 20px; }
 
         .auth-btn {
             background: rgba(127, 90, 240, 0.2);
             border: 1px solid var(--accent);
-            padding: 8px 20px;
+            padding: 10px;
             font-size: 0.8rem;
             margin-bottom: 10px;
             width: 100%; border-radius: 10px; color: white; cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
         }
 
         input {
             width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
-            color: white; outline: none; transition: 0.3s;
+            color: white; outline: none; transition: 0.3s; box-sizing: border-box;
         }
 
         input:focus { border-color: var(--accent2); box-shadow: 0 0 10px var(--accent2); }
 
-        button {
+        .submit-btn {
             width: 100%; padding: 12px; border-radius: 10px; border: none;
             background: linear-gradient(90deg, var(--accent), var(--accent2));
             color: white; font-weight: 600; cursor: pointer; transition: 0.3s;
         }
 
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent); }
-
-        #feed {
-            width: 100%; max-width: 450px;
-        }
+        #feed { width: 100%; max-width: 450px; }
 
         .post {
             background: rgba(255, 255, 255, 0.03);
             border-left: 3px solid var(--accent2);
             padding: 15px; margin-bottom: 15px; border-radius: 0 10px 10px 0;
-            animation: fadeIn 0.5s ease;
         }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } }
 
         .post-header { font-size: 0.8rem; color: var(--accent2); margin-bottom: 5px; }
         .post-content { font-size: 0.9rem; margin-bottom: 10px; opacity: 0.9; }
 
         .like-btn {
             background: transparent; border: 1px solid var(--accent2);
-            width: auto; padding: 5px 15px; font-size: 0.7rem; display: inline-block;
+            width: auto; padding: 5px 15px; font-size: 0.7rem; color: white; cursor: pointer;
         }
 
         #log-status { margin-top: 15px; text-align: center; font-size: 0.8rem; color: var(--accent2); }
@@ -104,13 +95,13 @@
     <div id="auth-section">
         <button id="login-btn" class="auth-btn">INITIALIZE AUTH (GOOGLE)</button>
         <button id="logout-btn" class="auth-btn" style="display:none;">TERMINATE SESSION</button>
-        <div id="user-info" style="font-size: 0.7rem; margin-bottom: 10px;"></div>
+        <div id="user-info" style="font-size: 0.7rem; margin-top: 10px; color: var(--accent2);"></div>
     </div>
 
     <form id="firebase-form" style="display:none;">
         <input type="text" id="name" placeholder="Identifier (Name)" required>
         <input type="email" id="email" placeholder="Uplink (Email)" required>
-        <button type="submit" id="submit-btn">SEND PACKET</button>
+        <button type="submit" class="submit-btn">SEND PACKET</button>
     </form>
     
     <div id="log-status">Awaiting authorization...</div>
@@ -119,17 +110,15 @@
 <div id="feed"></div>
 
 <script type="module">
-    // 1. Импорт модулей (Используем Redirect вместо Popup)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { 
         getFirestore, collection, addDoc, onSnapshot, 
         query, orderBy, updateDoc, doc, increment, serverTimestamp 
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import { 
-        getAuth, signInWithRedirect, GoogleAuthProvider, signOut, onAuthStateChanged 
+        getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // 2. Инициализация (Твои ключи)
     const firebaseConfig = {
         apiKey: "AIzaSyBL9VYkz-H6C3jssDP2t9j7iflVH1dgoUs",
         authDomain: "suhh-d5e46.firebaseapp.com",
@@ -152,22 +141,20 @@
     const logoutBtn = document.getElementById('logout-btn');
     const userInfo = document.getElementById('user-info');
 
-    // --- ЛОГИКА АВТОРИЗАЦИИ (Redirect) ---
+    // --- ОБРАБОТКА ВХОДА ---
 
-    loginBtn.onclick = () => {
-        signInWithRedirect(auth, provider);
-    };
+    loginBtn.onclick = () => signInWithRedirect(auth, provider);
+    logoutBtn.onclick = () => signOut(auth);
 
-    logoutBtn.onclick = () => {
-        signOut(auth).catch(err => console.error("Logout Error:", err));
-    };
+    // Ловим результат после перезагрузки страницы
+    getRedirectResult(auth).catch(err => console.error("Redirect Error:", err));
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'block';
             form.style.display = 'block';
-            userInfo.innerHTML = `Connected as: ${user.displayName}`;
+            userInfo.innerHTML = `ONLINE: ${user.displayName}`;
             status.innerHTML = "System online ⚡";
         } else {
             loginBtn.style.display = 'block';
@@ -178,30 +165,22 @@
         }
     });
 
-    // --- РАБОТА С ДАННЫМИ ---
-
-    async function addRequest(name, email) {
-        await addDoc(collection(db, "requests"), {
-            user: name,
-            contact: email,
-            likes: 0,
-            timestamp: serverTimestamp()
-        });
-    }
+    // --- БАЗА ДАННЫХ ---
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        status.innerHTML = "Uploading to cloud...";
-
+        status.innerHTML = "Syncing...";
         try {
-            await addRequest(
-                document.getElementById('name').value,
-                document.getElementById('email').value
-            );
-            status.innerHTML = "Packet delivered successfully!";
+            await addDoc(collection(db, "requests"), {
+                user: document.getElementById('name').value,
+                contact: document.getElementById('email').value,
+                likes: 0,
+                timestamp: serverTimestamp()
+            });
+            status.innerHTML = "Success! Packet sent.";
             form.reset();
         } catch (err) {
-            status.innerHTML = "Access Denied ❌";
+            status.innerHTML = "Error: No Permission ❌";
             console.error(err);
         }
     });
@@ -217,7 +196,7 @@
                 postElement.innerHTML = `
                     <div class="post-header">> ID: ${data.user}</div>
                     <div class="post-content">${data.contact}</div>
-                    <button class="like-btn" onclick="addLike('${post.id}')">
+                    <button class="like-btn" data-id="${post.id}">
                         ENERGY: ${data.likes || 0}
                     </button>
                 `;
@@ -226,18 +205,20 @@
         });
     }
 
-    loadRequests();
-
-    window.addLike = async (postId) => {
-        const postRef = doc(db, "requests", postId);
-        try {
-            await updateDoc(postRef, {
-                likes: increment(1)
-            });
-        } catch (err) {
-            alert("Security Protocol: Auth required for Energy Boost!");
+    // Слушатель кликов для лайков (исправленный метод)
+    document.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('like-btn')) {
+            const id = e.target.getAttribute('data-id');
+            const postRef = doc(db, "requests", id);
+            try {
+                await updateDoc(postRef, { likes: increment(1) });
+            } catch (err) {
+                alert("Auth required for Energy Boost!");
+            }
         }
-    };
+    });
+
+    loadRequests();
 </script>
 </body>
 </html>
