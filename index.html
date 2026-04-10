@@ -24,7 +24,6 @@
             overflow-y: auto;
         }
 
-        /* Glass card */
         .portal {
             width: 100%;
             max-width: 450px;
@@ -43,6 +42,20 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
+        /* Auth Section Styles */
+        #auth-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-btn {
+            background: rgba(127, 90, 240, 0.2);
+            border: 1px solid var(--accent);
+            padding: 8px 20px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
         input {
             width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
@@ -59,7 +72,6 @@
 
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent); }
 
-        /* Стили для "Живой" ленты (onSnapshot) */
         #feed {
             width: 100%; max-width: 450px;
         }
@@ -88,25 +100,36 @@
 
 <div class="portal">
     <h1>QUANTUM LINK ACCESS</h1>
-    <form id="firebase-form">
+
+    <div id="auth-section">
+        <button id="login-btn" class="auth-btn">INITIALIZE AUTH (GOOGLE)</button>
+        <button id="logout-btn" class="auth-btn" style="display:none;">TERMINATE SESSION</button>
+        <div id="user-info" style="font-size: 0.7rem; margin-bottom: 10px;"></div>
+    </div>
+
+    <form id="firebase-form" style="display:none;">
         <input type="text" id="name" placeholder="Identifier (Name)" required>
         <input type="email" id="email" placeholder="Uplink (Email)" required>
         <button type="submit" id="submit-btn">SEND PACKET</button>
     </form>
-    <div id="log-status">System ready...</div>
+    
+    <div id="log-status">Awaiting authorization...</div>
 </div>
 
 <div id="feed"></div>
 
 <script type="module">
-    // 1. Импорт модулей
+    // 1. Импорт модулей (Добавлен Auth)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { 
         getFirestore, collection, addDoc, onSnapshot, 
         query, orderBy, updateDoc, doc, increment, serverTimestamp 
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { 
+        getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // 2. Инициализация через ваши ключи
+    // 2. Инициализация
     const firebaseConfig = {
         apiKey: "AIzaSyBL9VYkz-H6C3jssDP2t9j7iflVH1dgoUs",
         authDomain: "suhh-d5e46.firebaseapp.com",
@@ -119,66 +142,95 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     const form = document.getElementById('firebase-form');
     const status = document.getElementById('log-status');
     const feed = document.getElementById('feed');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
 
-    // 3. Отправка данных (addDoc)
+    // --- ЛОГИКА АВТОРИЗАЦИИ ---
+
+    loginBtn.onclick = () => {
+        signInWithPopup(auth, provider).catch(err => console.error("Auth Error:", err));
+    };
+
+    logoutBtn.onclick = () => {
+        signOut(auth).catch(err => console.error("Logout Error:", err));
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Пользователь вошел
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'block';
+            form.style.display = 'block';
+            userInfo.innerHTML = `User: ${user.displayName}`;
+            status.innerHTML = "System ready...";
+        } else {
+            // Пользователь вышел
+            loginBtn.style.display = 'block';
+            logoutBtn.style.display = 'none';
+            form.style.display = 'none';
+            userInfo.innerHTML = "";
+            status.innerHTML = "Awaiting authorization...";
+        }
+    });
+
+    // --- РАБОТА С ДАННЫМИ ---
+
     async function addRequest(name, email) {
-    await addDoc(collection(db, "requests"), {
-        user: name,
-        contact: email,
-        likes: 0,
-        timestamp: serverTimestamp()
-    });
-}
-
-// Обработчик формы
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    status.innerHTML = "Syncing with cloud...";
-
-    try {
-        await addRequest(
-            document.getElementById('name').value,
-            document.getElementById('email').value
-        );
-        status.innerHTML = "Packet delivered successfully ⚡";
-        form.reset();
-    } catch (err) {
-        status.innerHTML = "Connection error ❌";
-        console.error(err);
-    }
-});
-
-    // 4. Реактивность (onSnapshot + orderBy)
-   function loadRequests() {
-    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-
-    onSnapshot(q, (snapshot) => {
-        feed.innerHTML = "";
-
-        snapshot.forEach((post) => {
-            const data = post.data();
-            const postElement = document.createElement('div');
-            postElement.className = 'post';
-            postElement.innerHTML = `
-                <div class="post-header">> ID: ${data.user}</div>
-                <div class="post-content">${data.contact}</div>
-                <button class="like-btn" onclick="addLike('${post.id}')">
-                    ENERGY: ${data.likes || 0}
-                </button>
-            `;
-            feed.appendChild(postElement);
+        await addDoc(collection(db, "requests"), {
+            user: name,
+            contact: email,
+            likes: 0,
+            timestamp: serverTimestamp()
         });
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        status.innerHTML = "Syncing with cloud...";
+
+        try {
+            await addRequest(
+                document.getElementById('name').value,
+                document.getElementById('email').value
+            );
+            status.innerHTML = "Packet delivered successfully ⚡";
+            form.reset();
+        } catch (err) {
+            status.innerHTML = "Access Denied ❌";
+            console.error(err);
+        }
     });
-}
 
-// Запуск функции загрузки
-loadRequests();
+    function loadRequests() {
+        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
-    // 5. Работа с лайками (updateDoc + increment)
+        onSnapshot(q, (snapshot) => {
+            feed.innerHTML = "";
+            snapshot.forEach((post) => {
+                const data = post.data();
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.innerHTML = `
+                    <div class="post-header">> ID: ${data.user}</div>
+                    <div class="post-content">${data.contact}</div>
+                    <button class="like-btn" onclick="addLike('${post.id}')">
+                        ENERGY: ${data.likes || 0}
+                    </button>
+                `;
+                feed.appendChild(postElement);
+            });
+        });
+    }
+
+    loadRequests();
+
     window.addLike = async (postId) => {
         const postRef = doc(db, "requests", postId);
         try {
@@ -186,7 +238,8 @@ loadRequests();
                 likes: increment(1)
             });
         } catch (err) {
-            alert("Security Rules prevent editing! Check console.");
+            alert("Auth Required for Energy Boost!");
+            console.error(err);
         }
     };
 </script>
