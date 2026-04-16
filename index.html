@@ -3,121 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Access Portal</title>
+    <title>Quantum DM Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg1: #0f0c29; --bg2: #302b63; --bg3: #24243e;
             --accent: #7f5af0; --accent2: #00f5ff;
         }
-
         body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            font-family: 'Orbitron', sans-serif;
-            background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
-            color: white;
-            padding: 40px 20px;
-            overflow-y: auto;
+            min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            font-family: 'Orbitron', sans-serif; background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+            color: white; padding: 20px; overflow-y: auto;
         }
-
         .portal {
-            width: 100%;
-            max-width: 450px;
-            padding: 30px;
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 0 40px rgba(0, 245, 255, 0.2);
-            margin-bottom: 30px;
+            width: 100%; max-width: 450px; padding: 25px; border-radius: 20px;
+            backdrop-filter: blur(20px); background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 40px rgba(0, 245, 255, 0.2);
+            margin-bottom: 20px;
         }
-
-        h1 {
-            text-align: center; margin-bottom: 25px; font-size: 1.4rem;
-            background: linear-gradient(90deg, var(--accent2), var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-
-        #auth-section { text-align: center; margin-bottom: 20px; }
-
-        .auth-btn {
-            background: rgba(127, 90, 240, 0.2);
-            border: 1px solid var(--accent);
-            padding: 10px;
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-            width: 100%; border-radius: 10px; color: white; cursor: pointer;
-            font-family: 'Orbitron', sans-serif;
-        }
-
-        input {
-            width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
-            color: white; outline: none; transition: 0.3s; box-sizing: border-box;
-        }
-
-        input:focus { border-color: var(--accent2); box-shadow: 0 0 10px var(--accent2); }
-
-        .submit-btn {
-            width: 100%; padding: 12px; border-radius: 10px; border: none;
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            color: white; font-weight: 600; cursor: pointer; transition: 0.3s;
-        }
-
+        h1 { text-align: center; font-size: 1.2rem; background: linear-gradient(90deg, var(--accent2), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .auth-btn { background: rgba(127, 90, 240, 0.2); border: 1px solid var(--accent); padding: 10px; width: 100%; border-radius: 10px; color: white; cursor: pointer; font-family: 'Orbitron'; margin-top: 10px; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; }
+        .submit-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(90deg, var(--accent), var(--accent2)); color: white; font-weight: 600; cursor: pointer; }
+        
+        /* Стили для чата */
+        #chat-target { margin: 15px 0; padding: 10px; border: 1px dashed var(--accent2); font-size: 0.8rem; text-align: center; }
+        .message { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--accent); }
+        .my-message { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
         #feed { width: 100%; max-width: 450px; }
-
-        .post {
-            background: rgba(255, 255, 255, 0.03);
-            border-left: 3px solid var(--accent2);
-            padding: 15px; margin-bottom: 15px; border-radius: 0 10px 10px 0;
-        }
-
-        .post-header { font-size: 0.8rem; color: var(--accent2); margin-bottom: 5px; }
-        .post-content { font-size: 0.9rem; margin-bottom: 10px; opacity: 0.9; }
-
-        .like-btn {
-            background: transparent; border: 1px solid var(--accent2);
-            width: auto; padding: 5px 15px; font-size: 0.7rem; color: white; cursor: pointer;
-        }
-
-        #log-status { margin-top: 15px; text-align: center; font-size: 0.8rem; color: var(--accent2); }
+        .status { font-size: 0.7rem; color: var(--accent2); text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="portal">
-    <h1>QUANTUM LINK ACCESS</h1>
+    <h1>QUANTUM DM SYSTEM</h1>
 
     <div id="auth-section">
-        <button id="login-btn" class="auth-btn">INITIALIZE AUTH (GOOGLE)</button>
+        <button id="login-btn" class="auth-btn">INITIALIZE AUTH</button>
         <button id="logout-btn" class="auth-btn" style="display:none;">TERMINATE SESSION</button>
-        <div id="user-info" style="font-size: 0.7rem; margin-top: 10px; color: var(--accent2);"></div>
+        <div id="user-info" class="status"></div>
     </div>
 
-    <form id="firebase-form" style="display:none;">
-        <input type="text" id="name" placeholder="Identifier (Name)" required>
-        <input type="email" id="email" placeholder="Uplink (Email)" required>
-        <button type="submit" class="submit-btn">SEND PACKET</button>
-    </form>
-    
-    <div id="log-status">Awaiting authorization...</div>
+    <div id="chat-ui" style="display:none;">
+        <div id="chat-target">Чат с: <b>Администратор (Тест)</b></div>
+        <form id="message-form">
+            <input type="text" id="msg-input" placeholder="Введите личное сообщение..." required>
+            <button type="submit" class="submit-btn">SEND ENCRYPTED</button>
+        </form>
+    </div>
+
+    <div id="log-status" class="status">Awaiting authorization...</div>
 </div>
 
 <div id="feed"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { 
-        getFirestore, collection, addDoc, onSnapshot, 
-        query, orderBy, updateDoc, doc, increment, serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    import { 
-        getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { getAuth, signInWithRedirect, GoogleAuthProvider, signOut, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBL9VYkz-H6C3jssDP2t9j7iflVH1dgoUs",
@@ -125,8 +69,7 @@
         projectId: "suhh-d5e46",
         storageBucket: "suhh-d5e46.firebasestorage.app",
         messagingSenderId: "460049677444",
-        appId: "1:460049677444:web:49c6b125f5de94397016d1",
-        measurementId: "G-290D5X7LS5"
+        appId: "1:460049677444:web:49c6b125f5de94397016d1"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -134,88 +77,78 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // Элементы
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
-    const form = document.getElementById('firebase-form');
+    const chatUi = document.getElementById('chat-ui');
+    const messageForm = document.getElementById('message-form');
     const status = document.getElementById('log-status');
     const feed = document.getElementById('feed');
     const userInfo = document.getElementById('user-info');
 
-    // 1. Клик по входу
-    loginBtn.onclick = async () => {
-        console.log("Button clicked!");
-        alert("Redirecting to Google... If nothing happens, check console (F12)");
-        try {
-            await signInWithRedirect(auth, provider);
-        } catch (e) {
-            alert("Error: " + e.message);
-        }
-    };
+    // ID того, кому пишем (для теста можно вставить UID друга из Firebase Auth)
+    const TARGET_ID = "ALMAS_TEST_ID"; 
 
-    // 2. Клик по выходу
+    loginBtn.onclick = () => signInWithRedirect(auth, provider);
     logoutBtn.onclick = () => signOut(auth);
 
-    // 3. Слежка за входом
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'block';
-            form.style.display = 'block';
-            userInfo.innerHTML = "Logged as: " + user.displayName;
-            status.innerHTML = "System Ready";
+            chatUi.style.display = 'block';
+            userInfo.innerHTML = `CONNECTED AS: ${user.displayName}`;
+            status.innerHTML = "System online ⚡";
+            loadMessages(user.uid);
         } else {
             loginBtn.style.display = 'block';
             logoutBtn.style.display = 'none';
-            form.style.display = 'none';
-            userInfo.innerHTML = "";
+            chatUi.style.display = 'none';
+            feed.innerHTML = "";
             status.innerHTML = "Awaiting Auth...";
         }
     });
 
-    // 4. Загрузка постов (без изменений)
-    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-    onSnapshot(q, (snapshot) => {
-        feed.innerHTML = "";
-        snapshot.forEach((postDoc) => {
-            const data = postDoc.data();
-            const div = document.createElement('div');
-            div.className = 'post';
-            div.innerHTML = `
-                <div class="post-header">> ID: ${data.user}</div>
-                <div class="post-content">${data.contact}</div>
-                <button class="like-btn" onclick="window.addLike('${postDoc.id}')">
-                    ENERGY: ${data.likes || 0}
-                </button>
-            `;
-            feed.appendChild(div);
-        });
-    });
-
-    // 5. Отправка формы
-    form.onsubmit = async (e) => {
+    // Отправка ЛИЧНОГО сообщения
+    messageForm.onsubmit = async (e) => {
         e.preventDefault();
+        const text = document.getElementById('msg-input').value;
         try {
-            await addDoc(collection(db, "requests"), {
-                user: document.getElementById('name').value,
-                contact: document.getElementById('email').value,
-                likes: 0,
+            await addDoc(collection(db, "messages"), {
+                senderId: auth.currentUser.uid,
+                receiverId: TARGET_ID,
+                text: text,
                 timestamp: serverTimestamp()
             });
-            form.reset();
+            messageForm.reset();
         } catch (err) {
-            alert("Rules error: " + err.message);
+            alert("Ошибка доступа: " + err.message);
         }
     };
 
-    // 6. Лайки
-    window.addLike = async (id) => {
-        try {
-            await updateDoc(doc(db, "requests", id), { likes: increment(1) });
-        } catch (e) {
-            alert("Log in to like!");
-        }
-    };
+    // Загрузка только ТВОИХ сообщений
+    function loadMessages(myUid) {
+        const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            feed.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                // Показываем сообщение только если ты отправитель или получатель
+                if (data.senderId === myUid || data.receiverId === myUid) {
+                    const div = document.createElement('div');
+                    const isMy = data.senderId === myUid;
+                    div.className = `message ${isMy ? 'my-message' : ''}`;
+                    div.innerHTML = `
+                        <div style="font-size: 0.6rem; color: var(--accent2)">
+                            ${isMy ? 'ВЫ' : 'СОБЕСЕДНИК'}
+                        </div>
+                        <div>${data.text}</div>
+                    `;
+                    feed.appendChild(div);
+                }
+            });
+        });
+    }
 </script>
 </body>
 </html>
