@@ -1,77 +1,85 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Quantum Firebase</title>
+<title>Firebase Secure App</title>
+
 <style>
-body {
-    font-family: Arial;
-    background: #0f0c29;
-    color: white;
-    text-align: center;
-}
-.portal {
-    max-width: 400px;
-    margin: auto;
-}
-button, input {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-}
-.post {
-    border: 1px solid cyan;
-    margin: 10px;
-    padding: 10px;
-}
+body { font-family: Arial; text-align:center; background:#111; color:white; }
+input, button { padding:10px; margin:5px; width:90%; }
+.post { border:1px solid cyan; margin:10px; padding:10px; }
+img { max-width:100%; margin-top:10px; }
 </style>
 </head>
 
 <body>
 
-<div class="portal">
-    <h2>Quantum Access</h2>
+<h2>Secure Firebase System</h2>
 
-    <button id="login">Login Google</button>
-    <button id="logout" style="display:none;">Logout</button>
+<button id="login">Login Google</button>
+<button id="logout" style="display:none;">Logout</button>
 
-    <p id="user"></p>
+<p id="user"></p>
 
-    <form id="form" style="display:none;">
-        <input id="name" placeholder="Name" required>
-        <input id="text" placeholder="Message" required>
-        <button>Send</button>
-    </form>
-</div>
+<form id="form" style="display:none;">
+    <input id="text" placeholder="Message" required>
+    <input type="file" id="image">
+    <button>Send</button>
+</form>
 
 <div id="feed"></div>
 
+<!-- 🔥 ВОТ ЭТО МЫ ДОБАВИЛИ (DM) -->
+<hr>
+<h3>Личные сообщения</h3>
+
+<input id="dmUser" placeholder="Кому (имя)">
+<input id="dmText" placeholder="Сообщение">
+<button id="sendDM">Отправить</button>
+
+<div id="dmBox"></div>
+
 <script type="module">
+
+// 🔥 IMPORT
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+
 import {
   getFirestore, collection, addDoc, onSnapshot,
-  query, orderBy, doc, updateDoc, increment, serverTimestamp
+  query, orderBy, doc, updateDoc, increment, serverTimestamp, deleteDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
 import {
   getAuth, signInWithPopup, GoogleAuthProvider,
   signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// 🔥 ТВОЙ конфиг (правильный)
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+
+// 🔥 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBL9VYkz-H6C3jsSdP2t9j7iflVH1dgoUs",
   authDomain: "suhh-d5e46.firebaseapp.com",
   projectId: "suhh-d5e46",
   storageBucket: "suhh-d5e46.firebasestorage.app",
   messagingSenderId: "460049677444",
-  appId: "1:460049677444:web:49c6b125f5de94397016d1",
-  measurementId: "G-290D5X7LS5"
+  appId: "1:460049677444:web:49c6b125f5de94397016d1"
 };
 
+// INIT
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
+
+// 👉 для F12
+window.db = db;
+window.doc = doc;
+window.updateDoc = updateDoc;
 
 // UI
 const login = document.getElementById('login');
@@ -80,34 +88,54 @@ const form = document.getElementById('form');
 const userText = document.getElementById('user');
 const feed = document.getElementById('feed');
 
+// 👉 DM UI
+const dmUser = document.getElementById('dmUser');
+const dmText = document.getElementById('dmText');
+const sendDM = document.getElementById('sendDM');
+const dmBox = document.getElementById('dmBox');
+
 // LOGIN
 login.onclick = () => signInWithPopup(auth, provider);
 logout.onclick = () => signOut(auth);
 
-// AUTH STATE
+// AUTH
 onAuthStateChanged(auth, (user) => {
     if (user) {
         login.style.display = "none";
         logout.style.display = "block";
         form.style.display = "block";
-        userText.innerText = "User: " + user.displayName;
+        userText.innerText = user.displayName;
+
         loadPosts();
+        loadDM(user); // 👈 добавили
+
     } else {
         login.style.display = "block";
         logout.style.display = "none";
         form.style.display = "none";
         userText.innerText = "";
         feed.innerHTML = "";
+        dmBox.innerHTML = "";
     }
 });
 
-// SEND MESSAGE
+// SEND POST
 form.onsubmit = async (e) => {
     e.preventDefault();
 
-    await addDoc(collection(db, "requests"), {
-        user: document.getElementById('name').value,
+    const file = document.getElementById('image').files[0];
+    let imageUrl = "";
+
+    if (file) {
+        const storageRef = ref(storage, "images/" + Date.now());
+        await uploadBytes(storageRef, file);
+        imageUrl = await getDownloadURL(storageRef);
+    }
+
+    await addDoc(collection(db, "posts"), {
         text: document.getElementById('text').value,
+        user: auth.currentUser.displayName,
+        image: imageUrl,
         likes: 0,
         timestamp: serverTimestamp()
     });
@@ -115,38 +143,90 @@ form.onsubmit = async (e) => {
     form.reset();
 };
 
-// LOAD POSTS (REALTIME)
+// REALTIME POSTS
 function loadPosts() {
-    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
         feed.innerHTML = "";
 
         snapshot.forEach(docSnap => {
-            const data = docSnap.data();
+            const d = docSnap.data();
 
             const div = document.createElement('div');
             div.className = "post";
 
             div.innerHTML = `
-                <b>${data.user}</b><br>
-                ${data.text}<br>
-                ❤️ ${data.likes || 0}
-                <button onclick="like('${docSnap.id}')">Like</button>
-            `;
+    <b>${d.user}</b><br>
+    ${d.text}<br>
+    ❤️ ${d.likes}
+    <button onclick="like('${docSnap.id}')">Like</button>
+    ${auth.currentUser && auth.currentUser.displayName === d.user 
+        ? `<button onclick="removePost('${docSnap.id}')">Delete</button>` 
+        : ""}
+`;
 
             feed.appendChild(div);
         });
     });
 }
 
-// LIKE (атомарно!)
+// LIKE
 window.like = async (id) => {
-    const ref = doc(db, "requests", id);
-    await updateDoc(ref, {
+    const refDoc = doc(db, "posts", id);
+    await updateDoc(refDoc, {
         likes: increment(1)
     });
 };
+
+// DELETE
+window.removePost = async (id) => {
+    try {
+        await deleteDoc(doc(db, "posts", id));
+    } catch (e) {
+        alert("Нет прав на удаление!");
+    }
+};
+
+// 🔥 DM ОТПРАВКА
+sendDM.onclick = async () => {
+    if (!auth.currentUser) return alert("Войди");
+
+    await addDoc(collection(db, "messages"), {
+        from: auth.currentUser.displayName,
+        to: dmUser.value,
+        text: dmText.value,
+        timestamp: serverTimestamp()
+    });
+
+    dmText.value = "";
+};
+
+// 🔥 DM REALTIME
+function loadDM(user) {
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+
+    onSnapshot(q, (snapshot) => {
+        dmBox.innerHTML = "";
+
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+
+            if (d.from === user.displayName || d.to === user.displayName) {
+                const div = document.createElement('div');
+
+                div.innerHTML = `
+                    <b>${d.from} → ${d.to}</b><br>
+                    ${d.text}
+                    <hr>
+                `;
+
+                dmBox.appendChild(div);
+            }
+        });
+    });
+}
+
 </script>
 
 </body>
