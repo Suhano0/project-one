@@ -73,6 +73,11 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+window.db = db;
+window.doc = doc;
+window.updateDoc = updateDoc;
+window.increment = increment;
+
 // UI
 const login = document.getElementById('login');
 const logout = document.getElementById('logout');
