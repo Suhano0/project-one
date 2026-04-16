@@ -1,77 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Firebase Secure App</title>
-
+<title>Quantum Firebase</title>
 <style>
-body { font-family: Arial; text-align:center; background:#111; color:white; }
-input, button { padding:10px; margin:5px; width:90%; }
-.post { border:1px solid cyan; margin:10px; padding:10px; }
-img { max-width:100%; margin-top:10px; }
+body {
+    font-family: Arial;
+    background: #0f0c29;
+    color: white;
+    text-align: center;
+}
+.portal {
+    max-width: 400px;
+    margin: auto;
+}
+button, input {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+}
+.post {
+    border: 1px solid cyan;
+    margin: 10px;
+    padding: 10px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Secure Firebase System</h2>
+<div class="portal">
+    <h2>Quantum Access</h2>
 
-<button id="login">Login Google</button>
-<button id="logout" style="display:none;">Logout</button>
+    <button id="login">Login Google</button>
+    <button id="logout" style="display:none;">Logout</button>
 
-<p id="user"></p>
+    <p id="user"></p>
 
-<form id="form" style="display:none;">
-    <input id="text" placeholder="Message" required>
-    <input type="file" id="image">
-    <button>Send</button>
-</form>
+    <form id="form" style="display:none;">
+        <input id="name" placeholder="Name" required>
+        <input id="text" placeholder="Message" required>
+        <button>Send</button>
+    </form>
+</div>
 
 <div id="feed"></div>
 
 <script type="module">
-
-// 🔥 IMPORT
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-
 import {
   getFirestore, collection, addDoc, onSnapshot,
   query, orderBy, doc, updateDoc, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
 import {
   getAuth, signInWithPopup, GoogleAuthProvider,
   signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
-
-
-// 🔥 CONFIG (ТВОЙ)
+// 🔥 ТВОЙ конфиг (правильный)
 const firebaseConfig = {
   apiKey: "AIzaSyBL9VYkz-H6C3jsSdP2t9j7iflVH1dgoUs",
   authDomain: "suhh-d5e46.firebaseapp.com",
   projectId: "suhh-d5e46",
   storageBucket: "suhh-d5e46.firebasestorage.app",
   messagingSenderId: "460049677444",
-  appId: "1:460049677444:web:49c6b125f5de94397016d1"
+  appId: "1:460049677444:web:49c6b125f5de94397016d1",
+  measurementId: "G-290D5X7LS5"
 };
 
-
-// INIT
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
-
-// 👉 для F12 (оставляем)
-window.db = db;
-window.doc = doc;
-window.updateDoc = updateDoc;
-
 
 // UI
 const login = document.getElementById('login');
@@ -84,13 +84,13 @@ const feed = document.getElementById('feed');
 login.onclick = () => signInWithPopup(auth, provider);
 logout.onclick = () => signOut(auth);
 
-// AUTH
+// AUTH STATE
 onAuthStateChanged(auth, (user) => {
     if (user) {
         login.style.display = "none";
         logout.style.display = "block";
         form.style.display = "block";
-        userText.innerText = user.displayName;
+        userText.innerText = "User: " + user.displayName;
         loadPosts();
     } else {
         login.style.display = "block";
@@ -101,23 +101,13 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// SEND POST + IMAGE
+// SEND MESSAGE
 form.onsubmit = async (e) => {
     e.preventDefault();
 
-    const file = document.getElementById('image').files[0];
-    let imageUrl = "";
-
-    if (file) {
-        const storageRef = ref(storage, "images/" + Date.now());
-        await uploadBytes(storageRef, file);
-        imageUrl = await getDownloadURL(storageRef);
-    }
-
-    await addDoc(collection(db, "posts"), {
+    await addDoc(collection(db, "requests"), {
+        user: document.getElementById('name').value,
         text: document.getElementById('text').value,
-        user: auth.currentUser.displayName,
-        image: imageUrl,
         likes: 0,
         timestamp: serverTimestamp()
     });
@@ -125,52 +115,38 @@ form.onsubmit = async (e) => {
     form.reset();
 };
 
-// REALTIME
+// LOAD POSTS (REALTIME)
 function loadPosts() {
-    const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
         feed.innerHTML = "";
 
         snapshot.forEach(docSnap => {
-            const d = docSnap.data();
+            const data = docSnap.data();
 
             const div = document.createElement('div');
             div.className = "post";
 
             div.innerHTML = `
-    <b>${d.user}</b><br>
-    ${d.text}<br>
-    ❤️ ${d.likes}
-    <button onclick="like('${docSnap.id}')">Like</button>
-    ${auth.currentUser && auth.currentUser.displayName === d.user 
-        ? `<button onclick="removePost('${docSnap.id}')">Delete</button>` 
-        : ""}
-`;
+                <b>${data.user}</b><br>
+                ${data.text}<br>
+                ❤️ ${data.likes || 0}
+                <button onclick="like('${docSnap.id}')">Like</button>
+            `;
 
             feed.appendChild(div);
         });
     });
 }
 
-// LIKE
+// LIKE (атомарно!)
 window.like = async (id) => {
-    const refDoc = doc(db, "posts", id);
-    await updateDoc(refDoc, {
+    const ref = doc(db, "requests", id);
+    await updateDoc(ref, {
         likes: increment(1)
     });
 };
-
-    import { deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-window.removePost = async (id) => {
-    try {
-        await deleteDoc(doc(db, "posts", id));
-    } catch (e) {
-        alert("Нет прав на удаление!");
-    }
-};
-
 </script>
 
 </body>
