@@ -6,36 +6,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --bg1: #0f0c29; --bg2: #302b63; --accent: #7f5af0; --accent2: #00f5ff; }
-        body { background: linear-gradient(135deg, var(--bg1), var(--bg2)); color: white; font-family: 'Orbitron'; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .portal { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); width: 100%; max-width: 400px; text-align: center; }
-        .auth-btn { background: transparent; border: 1px solid var(--accent2); color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: 'Orbitron'; width: 100%; margin: 10px 0; }
-        input { width: 100%; padding: 10px; margin: 5px 0; background: rgba(0,0,0,0.3); border: 1px solid var(--accent); color: white; border-radius: 5px; box-sizing: border-box; }
-        .post { background: rgba(255,255,255,0.05); padding: 15px; margin: 10px 0; border-radius: 10px; border-left: 4px solid var(--accent2); width: 100%; max-width: 400px; }
+        body { background: linear-gradient(135deg, var(--bg1), var(--bg2)); color: white; font-family: 'Orbitron'; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; overflow-y: auto; }
+        .portal { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 20px rgba(127, 90, 240, 0.3); }
+        .auth-btn { background: transparent; border: 1px solid var(--accent2); color: white; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-family: 'Orbitron'; width: 100%; margin: 10px 0; transition: 0.3s; }
+        .auth-btn:hover { background: rgba(0, 245, 255, 0.1); box-shadow: 0 0 10px var(--accent2); }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); color: white; border-radius: 5px; box-sizing: border-box; font-family: 'Orbitron'; font-size: 0.8rem; }
+        .post { background: rgba(255,255,255,0.05); padding: 15px; margin: 10px 0; border-radius: 10px; border-left: 4px solid var(--accent2); width: 100%; max-width: 400px; text-align: left; }
     </style>
 </head>
 <body>
 
 <div class="portal">
-    <h2 style="color: var(--accent2)">QUANTUM LINK ACCESS</h2>
-    <div id="user-info"></div>
+    <h2 style="color: var(--accent2); margin-bottom: 20px;">QUANTUM LINK ACCESS</h2>
+    <div id="user-info" style="margin-bottom: 10px; font-size: 0.9rem;"></div>
     <button id="login-btn" class="auth-btn">INITIALIZE AUTH (GOOGLE)</button>
     <button id="logout-btn" class="auth-btn" style="display:none">TERMINATE SESSION</button>
 
     <form id="msg-form" style="display:none; margin-top: 20px;">
         <input type="text" id="target" placeholder="Recipient Name" required>
-        <input type="text" id="text" placeholder="Message content..." required>
-        <button type="submit" class="auth-btn" style="border-color: var(--accent)">SEND DATA</button>
+        <input type="text" id="text" placeholder="Data to transmit..." required>
+        <button type="submit" class="auth-btn" style="border-color: var(--accent); color: var(--accent);">SEND DATA</button>
     </form>
-    <p id="status" style="font-size: 0.8rem; color: var(--accent2)">Awaiting authorization...</p>
+    <p id="status" style="font-size: 0.7rem; color: var(--accent2); margin-top: 15px; letter-spacing: 2px;">Awaiting authorization...</p>
 </div>
 
-<div id="feed"></div>
+<div id="feed" style="margin-top: 30px; width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     import { getAuth, signInWithRedirect, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
+    // Данные взяты напрямую из твоего Firebase Console
     const firebaseConfig = {
         apiKey: "AIzaSyDVYkz-M6C3jssDP2t9j7iflVH1dgoUs",
         authDomain: "suhh-d5e46.firebaseapp.com",
@@ -55,6 +57,7 @@
     const logoutBtn = document.getElementById('logout-btn');
     const form = document.getElementById('msg-form');
     const feed = document.getElementById('feed');
+    const status = document.getElementById('status');
 
     loginBtn.onclick = () => signInWithRedirect(auth, provider);
     logoutBtn.onclick = () => signOut(auth);
@@ -64,27 +67,32 @@
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'block';
             form.style.display = 'block';
-            document.getElementById('user-info').innerText = "Logged in as " + user.displayName;
-            document.getElementById('status').innerText = "CONNECTION STABLE";
+            document.getElementById('user-info').innerText = "AUTHORIZED: " + user.displayName.toUpperCase();
+            status.innerText = "CONNECTION STABLE";
             loadMessages(user.displayName);
         } else {
             loginBtn.style.display = 'block';
             logoutBtn.style.display = 'none';
             form.style.display = 'none';
             document.getElementById('user-info').innerText = "";
-            document.getElementById('status').innerText = "OFFLINE";
+            status.innerText = "OFFLINE";
+            feed.innerHTML = "";
         }
     });
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        await addDoc(collection(db, "private_messages"), {
-            from: auth.currentUser.displayName,
-            to: document.getElementById('target').value,
-            text: document.getElementById('text').value,
-            timestamp: serverTimestamp()
-        });
-        form.reset();
+        try {
+            await addDoc(collection(db, "private_messages"), {
+                from: auth.currentUser.displayName,
+                to: document.getElementById('target').value,
+                text: document.getElementById('text').value,
+                timestamp: serverTimestamp()
+            });
+            form.reset();
+        } catch (err) {
+            console.error("Transmission error:", err);
+        }
     };
 
     function loadMessages(myName) {
@@ -96,7 +104,7 @@
                 if (d.from === myName || d.to === myName) {
                     const div = document.createElement('div');
                     div.className = 'post';
-                    div.innerHTML = `<small>${d.from} -> ${d.to}</small><br>${d.text}`;
+                    div.innerHTML = `<small style="color: var(--accent2)">${d.from} > ${d.to}</small><br><span style="word-break: break-all;">${d.text}</span>`;
                     feed.appendChild(div);
                 }
             });
